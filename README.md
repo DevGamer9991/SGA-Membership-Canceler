@@ -9,7 +9,9 @@ npm install
 ```
 
 2. Set your cookie <br />
-   Set your cookie from your sga site in the `.env.example` file and rename it to `.env`
+
+      Set your cookie from your sga site in the `.env.example` file and rename it to `.env`
+
 4. Then run the script
 ```
 npm run start
