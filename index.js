@@ -172,7 +172,7 @@ function wait(ms) {
             if (membership.familyId != familyId) continue;
 
             if (membership.isActive) {
-              // await cancelMembership(memberId, familyId, membership.fields.registrationId);
+              await cancelMembership(memberId, familyId, membership.fields.registrationId);
 
               console.log(`Membership canceled: ${memberId}-${familyId}`);
             } else {
