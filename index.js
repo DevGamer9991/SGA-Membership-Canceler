@@ -29,6 +29,7 @@ async function parseActivities(html) {
     const activity = {
       registrationId: data.registrationid,
       memberId: data.memberid,
+      familyId: data.familyid,
       memberName,
       productName,
       activityCode,
@@ -36,28 +37,7 @@ async function parseActivities(html) {
       isRecurring: row.hasClass("IsRecurring"),
       canCancel: row.hasClass("CanCancel"),
       isMembership,
-      isPickleball,
-      fields: {
-        fullName: tds[0],
-        product: tds[1],
-        balances: tds.slice(2, 7),
-        dateRange: tds[7],
-        schedule: tds[9],
-        memberNumber: tds[10],
-        membershipType: tds[11],
-        branch: tds[12],
-        year: tds[13],
-        period: tds[14],
-        productDetails: tds[15],
-        code: tds[16],
-        permission: tds[17],
-        status: tds[18],
-        registrationId: tds[22],
-        joinDate: tds[23],
-        birthDate: tds[24],
-        age: tds[25],
-        gender: tds[26],
-      },
+      isPickleball
     };
 
     activities.push(activity);
@@ -91,6 +71,11 @@ async function getMemberActivity(id) {
 }
 
 async function cancelMembership(memberID, familyID, registrationID) {
+
+  const today = new Date();
+
+  const formattedDate = today.toISOString().split('T')[0];
+
   const response = await fetch(`https://ymcaokcstaff.sgasoftware.com/Sales/MemberActivity/PickCancellationReason?MemberID=${memberID}&FamilyID=${familyID}&RegistrationIDs=${registrationID}&CancellationID=239&CancellationDate=2025-10-17&CancelActivity=2`, {
     "headers": {
       "accept": "text/html, */*; q=0.01",
@@ -107,7 +92,7 @@ async function cancelMembership(memberID, familyID, registrationID) {
       "cookie": cookie,
       "Referer": "https://ymcaokcstaff.sgasoftware.com/Sales/MemberActivity?MemberID=6462228"
     },
-    "body": `MemberID=${memberID}&FamilyID=${familyID}&RegistrationIDs=${registrationID}&CancellationID=239&CancellationDate=2025-10-20&CancelActivity=2`,
+    "body": `MemberID=${memberID}&FamilyID=${familyID}&RegistrationIDs=${registrationID}&CancellationID=239&CancellationDate=${formattedDate}&CancelActivity=2`,
     "method": "POST"
   });
 
@@ -174,7 +159,7 @@ function wait(ms) {
           const memberId = newRecord[0];
           const familyId = newRecord[1];
 
-          console.log(`Processing member ID: ${memberId}`);
+          console.log(`Processing member ID: ${memberId}-${familyId}`);
 
           const memberRecord = await getMemberActivity(memberId);
 
@@ -184,25 +169,26 @@ function wait(ms) {
           const pickleballAddons = activities.filter(a => a.isPickleball);
 
           for (const membership of memberships) {
+            if (membership.familyId != familyId) continue;
+
             if (membership.isActive) {
-              await cancelMembership(memberId, familyId, membership.fields.registrationId);
+              // await cancelMembership(memberId, familyId, membership.fields.registrationId);
 
-              console.log(`Membership canceled: ${memberId}`);
+              console.log(`Membership canceled: ${memberId}-${familyId}`);
             } else {
-              console.log(`Membership For Member:"${memberId}" Not Active, Not Canceling`)
-            }
-
-          }
-
-          for (const pickleball of pickleballAddons) {
-            if (pickleball.isActive) {
-              await cancelMembership(memberId, familyId, membership.fields.registrationId);
-
-              console.log(`Pickleball Addon Canceled: ${memberId}`);
-            } else {
-              console.log(`Pickleball Addon For Member: "${memberId}" Not Active, Not Canceling`)
+              console.log(`Membership For Member:"${memberId}-${familyId} Not Active, Not Canceling`)
             }
           }
+
+          // for (const pickleball of pickleballAddons) {
+          //   if (pickleball.isActive) {
+          //     await cancelMembership(memberId, familyId, membership.fields.registrationId);
+
+          //     console.log(`Pickleball Addon Canceled: ${memberId}`);
+          //   } else {
+          //     console.log(`Pickleball Addon For Member: "${memberId}" Not Active, Not Canceling`)
+          //   }
+          // }
 
           await wait(600)
           // break;
